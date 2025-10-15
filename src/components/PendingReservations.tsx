@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { playSound } from "@/utils/sounds";
-import { LinkedListManager, ReservationNode } from "@/utils/linkedList";
-import { CheckCircle, Clock, Calendar, User, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { Loader2, X, ChevronRight } from "lucide-react";
+import type { ReservationNode } from "@/utils/linkedList";
 
 interface PendingReservationsProps {
   refreshTrigger: number;
@@ -19,20 +18,22 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
 
   const loadReservations = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('reservations')
         .select('*')
         .eq('status', 'pending')
+        .eq('user_id', user.id)
         .order('reservation_date', { ascending: true })
-        .order('reservation_time', { ascending: true });
+        .order('start_time', { ascending: true });
 
       if (error) throw error;
 
-      const sorted = LinkedListManager.sortByDateTime(data as ReservationNode[]);
-      setReservations(sorted);
+      setReservations(data as ReservationNode[]);
     } catch (error) {
-      console.error('Failed to load reservations:', error);
-      toast.error("Failed to load reservations");
+      console.error('Error loading reservations:', error);
     } finally {
       setIsLoading(false);
     }
@@ -41,9 +42,8 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
   useEffect(() => {
     loadReservations();
 
-    // Subscribe to realtime changes
     const channel = supabase
-      .channel('reservations_changes')
+      .channel('reservations-changes')
       .on(
         'postgres_changes',
         {
@@ -62,101 +62,100 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
     };
   }, [refreshTrigger]);
 
-  const handleMarkAsDone = async (id: string) => {
+  const handleCancel = async (id: string) => {
     playSound('click');
 
     try {
       const { error } = await supabase
         .from('reservations')
         .update({ 
-          status: 'completed',
+          status: 'cancelled',
           completed_at: new Date().toISOString()
         })
         .eq('id', id);
 
       if (error) throw error;
 
-      toast.success("Reservation marked as completed!");
+      toast.success("Reservation cancelled successfully!");
       playSound('success');
+      loadReservations();
     } catch (error) {
-      console.error('Failed to update reservation:', error);
-      toast.error("Failed to update reservation");
+      console.error('Cancel error:', error);
+      toast.error("Failed to cancel reservation");
       playSound('error');
     }
   };
 
   if (isLoading) {
     return (
-      <Card className="w-full">
-        <CardContent className="py-12">
-          <p className="text-center text-muted-foreground">Loading reservations...</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   if (reservations.length === 0) {
     return (
-      <Card className="w-full">
-        <CardContent className="py-12">
-          <p className="text-center text-muted-foreground text-lg">No pending reservations</p>
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="pt-12 pb-12 text-center">
+          <p className="text-xl text-muted-foreground">No pending reservations</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-4 w-full">
-      <h2 className="text-3xl font-bold text-center mb-6">Pending Reservations</h2>
+    <div className="w-full max-w-4xl mx-auto space-y-4">
+      <h2 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        Pending Reservations ({reservations.length})
+      </h2>
       
       {reservations.map((reservation, index) => (
-        <Card 
-          key={reservation.id} 
-          className="animate-slide-up hover:shadow-lg transition-all duration-300"
-          style={{ animationDelay: `${index * 0.1}s` }}
-        >
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <CardTitle className="text-2xl flex items-center gap-2">
-                  <User className="w-6 h-6 text-primary" />
-                  {reservation.name}
-                </CardTitle>
-                <Badge variant="secondary" className="text-sm">
-                  Linked Node #{index + 1}
-                </Badge>
-              </div>
+        <Card key={reservation.id} className="shadow-lg hover:shadow-xl transition-all animate-fade-in">
+          <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl flex items-center gap-2">
+                {reservation.name}
+                {index === 0 && (
+                  <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                    Next in list
+                  </span>
+                )}
+              </CardTitle>
               <Button
-                onClick={() => handleMarkAsDone(reservation.id)}
-                className="bg-accent hover:bg-accent/90"
+                variant="destructive"
+                size="sm"
+                onClick={() => handleCancel(reservation.id)}
+                className="gap-2"
               >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Mark Done
+                <X className="h-4 w-4" />
+                Cancel
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="pt-6 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="w-5 h-5 text-primary" />
-                <span className="font-medium">
-                  {format(new Date(reservation.reservation_date), 'MMMM dd, yyyy')}
-                </span>
+              <div>
+                <p className="text-sm text-muted-foreground">Date</p>
+                <p className="text-lg font-semibold">
+                  {format(new Date(reservation.reservation_date), 'EEEE, MMMM d, yyyy')}
+                </p>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="w-5 h-5 text-secondary" />
-                <span className="font-medium">
-                  {format(new Date(`2000-01-01T${reservation.reservation_time}`), 'hh:mm a')}
-                </span>
+              <div>
+                <p className="text-sm text-muted-foreground">Time</p>
+                <p className="text-lg font-semibold">
+                  {format(new Date(`2000-01-01T${reservation.start_time}`), 'h:mm a')} - {format(new Date(`2000-01-01T${reservation.end_time}`), 'h:mm a')}
+                </p>
               </div>
             </div>
-            <div className="flex items-start gap-2 text-muted-foreground pt-2">
-              <FileText className="w-5 h-5 text-accent mt-1" />
-              <p className="flex-1">{reservation.reason}</p>
+            <div>
+              <p className="text-sm text-muted-foreground">Reason</p>
+              <p className="text-base">{reservation.reason}</p>
             </div>
             {reservation.next_id && (
-              <div className="pt-2 text-xs text-muted-foreground border-t">
-                Next in list: {reservation.next_id.substring(0, 8)}...
+              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                <ChevronRight className="h-4 w-4" />
+                <span>Has next reservation</span>
               </div>
             )}
           </CardContent>

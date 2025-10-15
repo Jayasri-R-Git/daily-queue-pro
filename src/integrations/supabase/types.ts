@@ -14,39 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          hotel_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          hotel_name: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          hotel_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           completed_at: string | null
           created_at: string
+          end_time: string
           id: string
           name: string
           next_id: string | null
           reason: string
           reservation_date: string
-          reservation_time: string
+          start_time: string
           status: Database["public"]["Enums"]["reservation_status"]
+          user_id: string | null
         }
         Insert: {
           completed_at?: string | null
           created_at?: string
+          end_time?: string
           id?: string
           name: string
           next_id?: string | null
           reason: string
           reservation_date: string
-          reservation_time: string
+          start_time?: string
           status?: Database["public"]["Enums"]["reservation_status"]
+          user_id?: string | null
         }
         Update: {
           completed_at?: string | null
           created_at?: string
+          end_time?: string
           id?: string
           name?: string
           next_id?: string | null
           reason?: string
           reservation_date?: string
-          reservation_time?: string
+          start_time?: string
           status?: Database["public"]["Enums"]["reservation_status"]
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -58,6 +88,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -68,18 +116,28 @@ export type Database = {
         Returns: {
           completed_at: string
           created_at: string
+          end_time: string
           id: string
           name: string
           next_id: string
           reason: string
           reservation_date: string
-          reservation_time: string
+          start_time: string
           status: Database["public"]["Enums"]["reservation_status"]
+          user_id: string
         }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
-      reservation_status: "pending" | "completed"
+      app_role: "admin" | "user"
+      reservation_status: "pending" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -207,7 +265,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      reservation_status: ["pending", "completed"],
+      app_role: ["admin", "user"],
+      reservation_status: ["pending", "completed", "cancelled"],
     },
   },
 } as const

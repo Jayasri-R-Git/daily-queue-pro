@@ -3,12 +3,14 @@ export interface ReservationNode {
   id: string;
   name: string;
   reservation_date: string;
-  reservation_time: string;
+  start_time: string;
+  end_time: string;
   reason: string;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'completed' | 'cancelled';
   next_id: string | null;
   created_at: string;
   completed_at: string | null;
+  user_id: string;
 }
 
 export class LinkedListManager {
@@ -24,8 +26,8 @@ export class LinkedListManager {
     
     // Find insertion point based on date/time
     let insertIndex = sorted.findIndex((r) => {
-      const newDateTime = new Date(`${newReservation.reservation_date}T${newReservation.reservation_time}`);
-      const existingDateTime = new Date(`${r.reservation_date}T${r.reservation_time}`);
+      const newDateTime = new Date(`${newReservation.reservation_date}T${newReservation.start_time}`);
+      const existingDateTime = new Date(`${r.reservation_date}T${r.start_time}`);
       return newDateTime < existingDateTime;
     });
 
@@ -55,8 +57,8 @@ export class LinkedListManager {
    */
   static sortByDateTime(reservations: ReservationNode[]): ReservationNode[] {
     const sorted = [...reservations].sort((a, b) => {
-      const dateA = new Date(`${a.reservation_date}T${a.reservation_time}`);
-      const dateB = new Date(`${b.reservation_date}T${b.reservation_time}`);
+      const dateA = new Date(`${a.reservation_date}T${a.start_time}`);
+      const dateB = new Date(`${b.reservation_date}T${b.start_time}`);
       return dateA.getTime() - dateB.getTime();
     });
 
@@ -64,19 +66,31 @@ export class LinkedListManager {
   }
 
   /**
-   * Check if a date/time slot is available
+   * Check if a date/time slot is available with time range overlap detection
    */
   static isSlotAvailable(
     reservations: ReservationNode[],
     date: string,
-    time: string,
+    startTime: string,
+    endTime: string,
     excludeId?: string
   ): boolean {
-    return !reservations.some(
-      (r) => r.reservation_date === date && 
-            r.reservation_time === time && 
-            r.id !== excludeId
-    );
+    return !reservations.some((r) => {
+      if (r.reservation_date !== date || r.id === excludeId) return false;
+      
+      // Check for time overlap
+      const newStart = this.timeToMinutes(startTime);
+      const newEnd = this.timeToMinutes(endTime);
+      const existingStart = this.timeToMinutes(r.start_time);
+      const existingEnd = this.timeToMinutes(r.end_time);
+      
+      return (newStart < existingEnd && newEnd > existingStart);
+    });
+  }
+
+  private static timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 
   /**
@@ -87,10 +101,10 @@ export class LinkedListManager {
   }
 
   /**
-   * Get completed reservations grouped by date
+   * Get completed and cancelled reservations grouped by date
    */
   static getCompletedByDate(reservations: ReservationNode[]): Record<string, ReservationNode[]> {
-    const completed = reservations.filter((r) => r.status === 'completed');
+    const completed = reservations.filter((r) => r.status === 'completed' || r.status === 'cancelled');
     
     return completed.reduce((acc, reservation) => {
       const date = reservation.reservation_date;

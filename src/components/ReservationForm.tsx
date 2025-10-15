@@ -16,7 +16,8 @@ interface ReservationFormProps {
 export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -24,8 +25,14 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     e.preventDefault();
     playSound('click');
 
-    if (!name || !date || !time || !reason) {
+    if (!name || !date || !startTime || !endTime || !reason) {
       toast.error("All fields are required");
+      playSound('error');
+      return;
+    }
+
+    if (startTime >= endTime) {
+      toast.error("End time must be after start time");
       playSound('error');
       return;
     }
@@ -33,21 +40,40 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
     setIsSubmitting(true);
 
     try {
-      // Check if slot is available
-      const { data: existing, error: checkError } = await supabase
-        .from('reservations')
-        .select('id')
-        .eq('reservation_date', date)
-        .eq('reservation_time', time)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      if (existing) {
-        toast.error("This date and time slot is already reserved!");
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("You must be logged in to create a reservation");
         playSound('error');
         setIsSubmitting(false);
         return;
+      }
+
+      // Check if slot is available (no overlap)
+      const { data: existing } = await supabase
+        .from('reservations')
+        .select('id, start_time, end_time')
+        .eq('reservation_date', date)
+        .eq('status', 'pending')
+        .eq('user_id', user.id);
+
+      if (existing && existing.length > 0) {
+        const hasOverlap = existing.some((r) => {
+          const newStart = startTime;
+          const newEnd = endTime;
+          const existingStart = r.start_time;
+          const existingEnd = r.end_time;
+          
+          // Check for time overlap
+          return (newStart < existingEnd && newEnd > existingStart);
+        });
+
+        if (hasOverlap) {
+          toast.error("This time slot overlaps with an existing reservation!");
+          playSound('error');
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Insert new reservation
@@ -56,9 +82,11 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
         .insert({
           name: name.trim(),
           reservation_date: date,
-          reservation_time: time,
+          start_time: startTime,
+          end_time: endTime,
           reason: reason.trim(),
-          status: 'pending'
+          status: 'pending',
+          user_id: user.id
         });
 
       if (insertError) throw insertError;
@@ -69,7 +97,8 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       // Reset form
       setName("");
       setDate("");
-      setTime("");
+      setStartTime("");
+      setEndTime("");
       setReason("");
       
       onSuccess();
@@ -95,33 +124,45 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
+              placeholder="Enter guest name"
               className="text-lg py-6"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date" className="text-lg">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="text-lg py-6"
+              min={new Date().toISOString().split('T')[0]}
               required
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date" className="text-lg">Date</Label>
+              <Label htmlFor="startTime" className="text-lg">Start Time</Label>
               <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                id="startTime"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
                 className="text-lg py-6"
-                min={new Date().toISOString().split('T')[0]}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="time" className="text-lg">Time</Label>
+              <Label htmlFor="endTime" className="text-lg">End Time</Label>
               <Input
-                id="time"
+                id="endTime"
                 type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
                 className="text-lg py-6"
                 required
               />

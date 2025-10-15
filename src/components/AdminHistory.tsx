@@ -1,51 +1,58 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { LinkedListManager, ReservationNode } from "@/utils/linkedList";
-import { Calendar, Clock, User, FileText, CheckCircle2 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { format } from "date-fns";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import type { ReservationNode } from "@/utils/linkedList";
 
 export const AdminHistory = () => {
   const [historyByDate, setHistoryByDate] = useState<Record<string, ReservationNode[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadHistory = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('reservations')
+        .select('*')
+        .eq('user_id', user.id)
+        .in('status', ['completed', 'cancelled'])
+        .order('reservation_date', { ascending: false })
+        .order('start_time', { ascending: false });
+
+      if (error) throw error;
+
+      const grouped = (data as ReservationNode[]).reduce((acc, reservation) => {
+        const date = reservation.reservation_date;
+        if (!acc[date]) {
+          acc[date] = [];
+        }
+        acc[date].push(reservation);
+        return acc;
+      }, {} as Record<string, ReservationNode[]>);
+
+      setHistoryByDate(grouped);
+    } catch (error) {
+      console.error('Error loading history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('reservations')
-          .select('*')
-          .eq('status', 'completed')
-          .order('reservation_date', { ascending: false })
-          .order('reservation_time', { ascending: false });
-
-        if (error) throw error;
-
-        const grouped = LinkedListManager.getCompletedByDate(data as ReservationNode[]);
-        setHistoryByDate(grouped);
-      } catch (error) {
-        console.error('Failed to load history:', error);
-        toast.error("Failed to load history");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadHistory();
 
-    // Subscribe to realtime changes
     const channel = supabase
-      .channel('history_changes')
+      .channel('history-changes')
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'reservations',
-          filter: 'status=eq.completed'
+          table: 'reservations'
         },
         () => {
           loadHistory();
@@ -60,88 +67,100 @@ export const AdminHistory = () => {
 
   if (isLoading) {
     return (
-      <Card className="w-full">
-        <CardContent className="py-12">
-          <p className="text-center text-muted-foreground">Loading history...</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
-  const dates = Object.keys(historyByDate).sort((a, b) => 
-    new Date(b).getTime() - new Date(a).getTime()
-  );
+  const dates = Object.keys(historyByDate);
 
   if (dates.length === 0) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-3xl text-center">Reservation History</CardTitle>
-        </CardHeader>
-        <CardContent className="py-12">
-          <p className="text-center text-muted-foreground text-lg">No completed reservations yet</p>
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="pt-12 pb-12 text-center">
+          <p className="text-xl text-muted-foreground">No completed or cancelled reservations</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full animate-fade-in">
-      <CardHeader className="bg-gradient-to-r from-accent/10 to-primary/10">
-        <CardTitle className="text-3xl text-center flex items-center justify-center gap-3">
-          <CheckCircle2 className="w-8 h-8 text-accent" />
-          Reservation History
-        </CardTitle>
-        <p className="text-center text-muted-foreground">Administrator View - Day by Day</p>
+    <Card className="w-full max-w-4xl mx-auto shadow-xl animate-fade-in">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10">
+        <CardTitle className="text-3xl text-center">Reservation History</CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
-        <Accordion type="single" collapsible className="space-y-4">
-          {dates.map((date) => (
-            <AccordionItem 
-              key={date} 
-              value={date}
-              className="border rounded-lg px-4 bg-card hover:shadow-md transition-all"
-            >
-              <AccordionTrigger className="hover:no-underline py-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  <span className="text-xl font-semibold">
-                    {format(new Date(date), 'EEEE, MMMM dd, yyyy')}
-                  </span>
-                  <Badge variant="secondary" className="ml-2">
-                    {historyByDate[date].length} completed
-                  </Badge>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-3 pt-3">
-                {historyByDate[date].map((reservation) => (
-                  <Card key={reservation.id} className="bg-muted/50">
-                    <CardContent className="pt-4 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-primary" />
-                        <span className="font-semibold text-lg">{reservation.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        <span>
-                          {format(new Date(`2000-01-01T${reservation.reservation_time}`), 'hh:mm a')}
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2 text-muted-foreground">
-                        <FileText className="w-4 h-4 mt-1" />
-                        <p className="flex-1 text-sm">{reservation.reason}</p>
-                      </div>
-                      {reservation.completed_at && (
-                        <div className="text-xs text-muted-foreground pt-2 border-t">
-                          Completed: {format(new Date(reservation.completed_at), 'MMM dd, yyyy hh:mm a')}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
+        <Accordion type="single" collapsible className="w-full space-y-2">
+          {dates.map((date) => {
+            const reservations = historyByDate[date];
+            const completed = reservations.filter(r => r.status === 'completed').length;
+            const cancelled = reservations.filter(r => r.status === 'cancelled').length;
+            
+            return (
+              <AccordionItem key={date} value={date} className="border rounded-lg px-4 shadow-sm">
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center justify-between w-full pr-4">
+                    <span className="text-lg font-semibold">
+                      {format(new Date(date), 'EEEE, MMMM d, yyyy')}
+                    </span>
+                    <div className="flex gap-4 text-sm">
+                      <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <CheckCircle2 className="h-4 w-4" />
+                        {completed} Completed
+                      </span>
+                      <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
+                        <XCircle className="h-4 w-4" />
+                        {cancelled} Cancelled
+                      </span>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-3 pt-2">
+                    {reservations.map((reservation) => (
+                      <Card key={reservation.id} className="bg-muted/30">
+                        <CardContent className="pt-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-lg">{reservation.name}</p>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              reservation.status === 'completed' 
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                            }`}>
+                              {reservation.status === 'completed' ? 'Completed' : 'Cancelled'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Time:</span>
+                              <p className="font-medium">
+                                {format(new Date(`2000-01-01T${reservation.start_time}`), 'h:mm a')} - {format(new Date(`2000-01-01T${reservation.end_time}`), 'h:mm a')}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">
+                                {reservation.status === 'completed' ? 'Completed at:' : 'Cancelled at:'}
+                              </span>
+                              <p className="font-medium">
+                                {reservation.completed_at 
+                                  ? format(new Date(reservation.completed_at), 'h:mm a, MMM d')
+                                  : 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground text-sm">Reason:</span>
+                            <p className="text-sm">{reservation.reason}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
         </Accordion>
       </CardContent>
     </Card>

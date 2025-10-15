@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock } from "lucide-react";
 import { playSound } from "@/utils/sounds";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface StartScreenProps {
   onStart: () => void;
@@ -18,6 +19,10 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
       </div>
 
       <div className="relative z-10 text-center space-y-8 p-8 animate-fade-in">
@@ -44,8 +49,19 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
           Start Reservation
         </Button>
 
-        <div className="pt-8 text-sm text-muted-foreground">
-          <p>Powered by C-style linked list implementation</p>
+        {/* Developer Credit Box */}
+        <div className="pt-8">
+          <div className="bg-card border-2 border-primary/20 rounded-lg p-6 max-w-md mx-auto shadow-lg">
+            <div className="space-y-2 text-sm">
+              <p className="font-semibold text-primary">Developed by Jayasri R</p>
+              <p className="text-muted-foreground">Reg No: 24MIS0183</p>
+              <p className="text-muted-foreground">Vellore Institute of Technology, Vellore</p>
+              <p className="text-muted-foreground">SCOPE - Computer Science Engineering and Information Systems</p>
+              <p className="text-xs text-muted-foreground pt-2 border-t border-border mt-3">
+                All copyright reserved to KishoreRaja P.C, Professor Grade 1
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
