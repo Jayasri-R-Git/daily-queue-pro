@@ -28,8 +28,8 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
       <div className="relative z-10 text-center space-y-8 p-8 animate-fade-in">
         <div className="space-y-4">
           <div className="flex justify-center gap-4 mb-6">
-            <Calendar className="w-16 h-16 text-primary" />
-            <Clock className="w-16 h-16 text-secondary" />
+            <Calendar className="w-16 h-16 text-primary animate-slow-pulse" />
+            <Clock className="w-16 h-16 text-secondary animate-slow-pulse" />
           </div>
           
           <h1 className="text-6xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -44,23 +44,53 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
         <Button
           onClick={handleStart}
           size="lg"
-          className="text-xl px-12 py-8 bg-gradient-to-r from-primary to-secondary hover:shadow-2xl hover:scale-105 transition-all duration-300"
+          className="text-xl px-12 py-8 bg-gradient-to-r from-primary to-secondary hover:shadow-2xl hover:scale-105 transition-all duration-300 animate-slow-pulse"
         >
           Start Reservation
         </Button>
 
-        {/* Developer Credit Box */}
-        <div className="pt-8">
-          <div className="bg-card border-2 border-primary/20 rounded-lg p-6 max-w-md mx-auto shadow-lg">
-            <div className="space-y-2 text-sm">
-              <p className="font-semibold text-primary">Developed by Jayasri R</p>
-              <p className="text-muted-foreground">Reg No: 24MIS0183</p>
-              <p className="text-muted-foreground">Vellore Institute of Technology, Vellore</p>
-              <p className="text-muted-foreground">SCOPE - Computer Science Engineering and Information Systems</p>
-              <p className="text-xs text-muted-foreground pt-2 border-t border-border mt-3">
-                All copyright reserved to KishoreRaja P.C, Professor Grade 1
+        {/* Developer and Faculty Info */}
+        <div className="pt-8 space-y-4 max-w-2xl mx-auto">
+          {/* Developer Box */}
+          <div className="bg-card border-2 border-primary/20 rounded-lg p-6 shadow-lg">
+            <h3 className="text-lg font-bold text-primary mb-3 font-serif">Developed by</h3>
+            <div className="space-y-1 text-sm">
+              <p className="text-foreground"><span className="font-semibold">Name:</span> Jayasri R</p>
+              <p className="text-foreground"><span className="font-semibold">Reg No:</span> 24MIS0183 (SCOPE)</p>
+              <p className="text-foreground">
+                <span className="font-semibold">Email:</span>{" "}
+                <a 
+                  href="mailto:jayasri.r2024@vitstudent.ac.in" 
+                  className="text-primary hover:underline transition-all"
+                >
+                  jayasri.r2024@vitstudent.ac.in
+                </a>
               </p>
             </div>
+          </div>
+
+          {/* Faculty Box */}
+          <div className="bg-card border-2 border-secondary/20 rounded-lg p-6 shadow-lg">
+            <h3 className="text-lg font-bold text-secondary mb-3 font-serif">Faculty in-charge</h3>
+            <div className="space-y-1 text-sm">
+              <p className="text-foreground"><span className="font-semibold">Name:</span> KishoreRaja P C</p>
+              <p className="text-foreground">
+                <span className="font-semibold">Email:</span>{" "}
+                <a 
+                  href="mailto:kishoreraja.pc@vit.ac.in" 
+                  className="text-secondary hover:underline transition-all"
+                >
+                  kishoreraja.pc@vit.ac.in
+                </a>
+              </p>
+            </div>
+          </div>
+
+          {/* Copyright Footer */}
+          <div className="text-center pt-4">
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} All rights reserved
+            </p>
           </div>
         </div>
       </div>

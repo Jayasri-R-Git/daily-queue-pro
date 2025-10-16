@@ -7,7 +7,8 @@ import { PendingReservations } from "@/components/PendingReservations";
 import { AdminHistory } from "@/components/AdminHistory";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, LayoutDashboard, History, LogOut } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, History, LogOut, User } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { playSound } from "@/utils/sounds";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
@@ -102,20 +103,32 @@ const Index = () => {
           </Button>
           <div className="text-center">
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              {hotelName} - Reservation Management
+              Reservation Management
             </h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <ThemeToggle />
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleLogout}
-              className="shadow-md hover:shadow-lg transition-all"
-            >
-              <LogOut className="mr-2 h-5 w-5" />
-              Logout
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="lg" className="shadow-md hover:shadow-lg transition-all">
+                  <User className="mr-2 h-5 w-5" />
+                  Account
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-2 text-sm">
+                  <p className="font-semibold">{hotelName}</p>
+                  <p className="text-muted-foreground text-xs mt-1">{user?.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
