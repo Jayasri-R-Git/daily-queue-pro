@@ -123,12 +123,22 @@ export const AdminHistory = () => {
                         <CardContent className="pt-4 space-y-2">
                           <div className="flex items-center justify-between">
                             <p className="font-semibold text-lg">{reservation.name}</p>
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 ${
                               reservation.status === 'completed' 
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                                 : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                             }`}>
-                              {reservation.status === 'completed' ? 'Completed' : 'Cancelled'}
+                              {reservation.status === 'completed' ? (
+                                <>
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  Completed
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="h-4 w-4" />
+                                  Cancelled
+                                </>
+                              )}
                             </span>
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-sm">
