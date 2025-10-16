@@ -28,8 +28,8 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
       <div className="relative z-10 text-center space-y-8 p-8 animate-fade-in">
         <div className="space-y-4">
           <div className="flex justify-center gap-4 mb-6">
-            <Calendar className="w-16 h-16 text-primary animate-pulse-glow" />
-            <Clock className="w-16 h-16 text-secondary animate-pulse-glow" />
+            <Calendar className="w-16 h-16 text-primary" />
+            <Clock className="w-16 h-16 text-secondary" />
           </div>
           
           <h1 className="text-6xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -44,7 +44,7 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
         <Button
           onClick={handleStart}
           size="lg"
-          className="text-xl px-12 py-8 bg-gradient-to-r from-primary to-secondary hover:shadow-2xl hover:scale-105 transition-all duration-300 animate-pulse-glow"
+          className="text-xl px-12 py-8 bg-gradient-to-r from-primary to-secondary hover:shadow-2xl hover:scale-105 transition-all duration-300"
         >
           Start Reservation
         </Button>
