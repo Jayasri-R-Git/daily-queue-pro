@@ -44,7 +44,7 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
         <Button
           onClick={handleStart}
           size="lg"
-          className="text-xl px-12 py-8 bg-gradient-to-r from-primary to-secondary hover:shadow-2xl hover:scale-105 transition-all duration-300 animate-slow-pulse"
+          className="text-xl px-12 py-8 bg-gradient-to-r from-primary to-secondary shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_50px_hsl(var(--primary)/0.6)] hover:scale-105 transition-all duration-300"
         >
           Start Reservation
         </Button>
@@ -56,7 +56,7 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
             <h3 className="text-lg font-bold text-primary mb-3 font-serif">Developed by</h3>
             <div className="space-y-1 text-sm">
               <p className="text-foreground"><span className="font-semibold">Name:</span> Jayasri R</p>
-              <p className="text-foreground"><span className="font-semibold">Reg No:</span> 24MIS0183 (SCOPE)</p>
+              <p className="text-foreground"><span className="font-semibold">Reg No:</span> 24MIS0183 (SCORE)</p>
               <p className="text-foreground">
                 <span className="font-semibold">Email:</span>{" "}
                 <a 
