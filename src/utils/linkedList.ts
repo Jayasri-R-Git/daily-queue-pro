@@ -3,6 +3,7 @@ export interface ReservationNode {
   id: string;
   name: string;
   reservation_date: string;
+  end_date?: string;
   start_time: string;
   end_time: string;
   reason: string;

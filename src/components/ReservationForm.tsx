@@ -110,6 +110,7 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
         .insert({
           name: name.trim(),
           reservation_date: date,
+          end_date: endDate || date,
           start_time: startTime,
           end_time: endTime,
           reason: reason.trim(),

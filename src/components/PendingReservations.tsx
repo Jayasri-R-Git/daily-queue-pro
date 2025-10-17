@@ -62,8 +62,10 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
       const now = new Date();
       
       for (const reservation of reservations) {
-        const resDate = new Date(reservation.reservation_date);
-        const endDateTime = parse(reservation.end_time, 'HH:mm:ss', resDate);
+        // Use end_date if available, otherwise use reservation_date
+        const finalDate = reservation.end_date || reservation.reservation_date;
+        const endDate = new Date(finalDate);
+        const endDateTime = parse(reservation.end_time, 'HH:mm:ss', endDate);
         
         // If current time is past end time, mark as completed
         if (isAfter(now, endDateTime)) {
@@ -138,17 +140,45 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
 
   const getReservationStatus = (reservation: ReservationNode, index: number) => {
     const now = new Date();
-    const resDate = new Date(reservation.reservation_date);
-    const startDateTime = parse(reservation.start_time, 'HH:mm:ss', resDate);
-    const endDateTime = parse(reservation.end_time, 'HH:mm:ss', resDate);
+    const startDate = new Date(reservation.reservation_date);
+    const startDateTime = parse(reservation.start_time, 'HH:mm:ss', startDate);
+    
+    const finalDate = reservation.end_date || reservation.reservation_date;
+    const endDate = new Date(finalDate);
+    const endDateTime = parse(reservation.end_time, 'HH:mm:ss', endDate);
     
     // Check if reservation is currently ongoing
     if (isAfter(now, startDateTime) && isBefore(now, endDateTime)) {
       return { text: "Ongoing", className: "bg-green-500 text-white animate-pulse" };
     }
     
-    // First pending reservation (next in line)
-    if (index === 0) {
+    // Check if any reservation is ongoing
+    const hasOngoing = reservations.some((res, idx) => {
+      const resStartDate = new Date(res.reservation_date);
+      const resStartTime = parse(res.start_time, 'HH:mm:ss', resStartDate);
+      const resFinalDate = res.end_date || res.reservation_date;
+      const resEndDate = new Date(resFinalDate);
+      const resEndTime = parse(res.end_time, 'HH:mm:ss', resEndDate);
+      return isAfter(now, resStartTime) && isBefore(now, resEndTime);
+    });
+    
+    // If there's an ongoing reservation, show "Next in list" for the first non-ongoing one
+    // If no ongoing, show "Next in list" for the first reservation
+    if (hasOngoing) {
+      // Find the first non-ongoing reservation
+      const firstNonOngoing = reservations.findIndex((res) => {
+        const resStartDate = new Date(res.reservation_date);
+        const resStartTime = parse(res.start_time, 'HH:mm:ss', resStartDate);
+        const resFinalDate = res.end_date || res.reservation_date;
+        const resEndDate = new Date(resFinalDate);
+        const resEndTime = parse(res.end_time, 'HH:mm:ss', resEndDate);
+        return !(isAfter(now, resStartTime) && isBefore(now, resEndTime));
+      });
+      
+      if (index === firstNonOngoing) {
+        return { text: "Next in list", className: "bg-primary text-primary-foreground" };
+      }
+    } else if (index === 0) {
       return { text: "Next in list", className: "bg-primary text-primary-foreground" };
     }
     
