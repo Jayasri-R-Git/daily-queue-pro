@@ -57,7 +57,7 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
       )
       .subscribe();
 
-    // Check every minute for completed reservations
+    // Check every 30 seconds for completed reservations
     const interval = setInterval(async () => {
       const now = new Date();
       
@@ -74,19 +74,19 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
                 status: 'completed',
                 completed_at: new Date().toISOString()
               })
-              .eq('id', reservation.id);
+              .eq('id', reservation.id)
+              .eq('status', 'pending');
 
             if (!error) {
               toast.success(`Reservation for ${reservation.name} completed!`);
               playSound('success');
-              loadReservations();
             }
           } catch (error) {
             console.error('Error completing reservation:', error);
           }
         }
       }
-    }, 60000); // Check every minute
+    }, 30000); // Check every 30 seconds
 
     return () => {
       supabase.removeChannel(channel);

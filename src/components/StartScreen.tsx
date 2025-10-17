@@ -73,7 +73,7 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
           <div className="bg-card border-2 border-secondary/20 rounded-lg p-6 shadow-lg">
             <h3 className="text-lg font-bold text-secondary mb-3 font-serif">Faculty in-charge</h3>
             <div className="space-y-1 text-sm">
-              <p className="text-foreground"><span className="font-semibold">Name:</span> KishoreRaja P C</p>
+              <p className="text-foreground"><span className="font-semibold">Name:</span> Dr.KishoreRaja P C</p>
               <p className="text-foreground">
                 <span className="font-semibold">Email:</span>{" "}
                 <a 

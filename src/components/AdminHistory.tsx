@@ -99,19 +99,19 @@ export const AdminHistory = () => {
             
             return (
               <AccordionItem key={date} value={date} className="border rounded-lg px-4 shadow-sm">
-                <AccordionTrigger className="hover:no-underline">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <span className="text-lg font-semibold">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2 md:pr-4">
+                    <span className="text-base md:text-lg font-semibold text-left">
                       {format(new Date(date), 'EEEE, MMMM d, yyyy')}
                     </span>
-                    <div className="flex gap-4 text-sm">
+                    <div className="flex gap-3 md:gap-4 text-xs md:text-sm">
                       <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4" />
-                        {completed} Completed
+                        <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4" />
+                        <span className="whitespace-nowrap">{completed} Completed</span>
                       </span>
                       <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
-                        <XCircle className="h-4 w-4" />
-                        {cancelled} Cancelled
+                        <XCircle className="h-3 w-3 md:h-4 md:w-4" />
+                        <span className="whitespace-nowrap">{cancelled} Cancelled</span>
                       </span>
                     </div>
                   </div>
