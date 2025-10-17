@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +16,31 @@ interface ReservationFormProps {
 export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showEndDate, setShowEndDate] = useState(false);
+
+  // Check if times span multiple days
+  useEffect(() => {
+    if (startTime && endTime) {
+      // If end time is before or equal to start time, it spans to next day
+      if (endTime <= startTime) {
+        setShowEndDate(true);
+        if (!endDate) {
+          // Auto-set end date to next day
+          const nextDay = new Date(date || new Date());
+          nextDay.setDate(nextDay.getDate() + 1);
+          setEndDate(nextDay.toISOString().split('T')[0]);
+        }
+      } else {
+        setShowEndDate(false);
+        setEndDate("");
+      }
+    }
+  }, [startTime, endTime, date]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +52,14 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       return;
     }
 
-    if (startTime >= endTime) {
+    if (showEndDate && !endDate) {
+      toast.error("Please select an end date for multi-day reservation");
+      playSound('error');
+      return;
+    }
+
+    // For single day, validate times
+    if (!showEndDate && startTime >= endTime) {
       toast.error("End time must be after start time");
       playSound('error');
       return;
@@ -97,9 +125,11 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
       // Reset form
       setName("");
       setDate("");
+      setEndDate("");
       setStartTime("");
       setEndTime("");
       setReason("");
+      setShowEndDate(false);
       
       onSuccess();
     } catch (error) {
@@ -168,6 +198,24 @@ export const ReservationForm = ({ onSuccess }: ReservationFormProps) => {
               />
             </div>
           </div>
+
+          {showEndDate && (
+            <div className="space-y-2 animate-fade-in">
+              <Label htmlFor="endDate" className="text-lg">End Date (Multi-day Reservation)</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="text-lg py-6"
+                min={date}
+                required
+              />
+              <p className="text-sm text-muted-foreground">
+                Your reservation spans multiple days
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="reason" className="text-lg">Reason for Reservation</Label>

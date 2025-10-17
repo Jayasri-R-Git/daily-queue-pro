@@ -91,18 +91,18 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <Button
             variant="outline"
             size="lg"
             onClick={handleBack}
-            className="shadow-md hover:shadow-lg transition-all"
+            className="shadow-md hover:shadow-lg transition-all md:px-4 px-2"
           >
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            Back to Start
+            <ArrowLeft className="md:mr-2 h-5 w-5" />
+            <span className="hidden md:inline">Back to Start</span>
           </Button>
-          <div className="text-center">
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <div className="text-center flex-1">
+            <h1 className="text-xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Reservation Management
             </h1>
           </div>
@@ -110,9 +110,9 @@ const Index = () => {
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="lg" className="shadow-md hover:shadow-lg transition-all">
-                  <User className="mr-2 h-5 w-5" />
-                  Account
+                <Button variant="outline" size="lg" className="shadow-md hover:shadow-lg transition-all md:px-4 px-2">
+                  <User className="md:mr-2 h-5 w-5" />
+                  <span className="hidden md:inline">Account</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

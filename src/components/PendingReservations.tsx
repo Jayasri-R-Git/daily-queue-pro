@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { playSound } from "@/utils/sounds";
-import { format } from "date-fns";
+import { format, isAfter, isBefore, parse } from "date-fns";
 import { Loader2, X, ChevronRight } from "lucide-react";
 import type { ReservationNode } from "@/utils/linkedList";
 
@@ -57,10 +57,42 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
       )
       .subscribe();
 
+    // Check every minute for completed reservations
+    const interval = setInterval(async () => {
+      const now = new Date();
+      
+      for (const reservation of reservations) {
+        const resDate = new Date(reservation.reservation_date);
+        const endDateTime = parse(reservation.end_time, 'HH:mm:ss', resDate);
+        
+        // If current time is past end time, mark as completed
+        if (isAfter(now, endDateTime)) {
+          try {
+            const { error } = await supabase
+              .from('reservations')
+              .update({ 
+                status: 'completed',
+                completed_at: new Date().toISOString()
+              })
+              .eq('id', reservation.id);
+
+            if (!error) {
+              toast.success(`Reservation for ${reservation.name} completed!`);
+              playSound('success');
+              loadReservations();
+            }
+          } catch (error) {
+            console.error('Error completing reservation:', error);
+          }
+        }
+      }
+    }, 60000); // Check every minute
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(interval);
     };
-  }, [refreshTrigger]);
+  }, [refreshTrigger, reservations]);
 
   const handleCancel = async (id: string) => {
     playSound('click');
@@ -104,24 +136,46 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
     );
   }
 
+  const getReservationStatus = (reservation: ReservationNode, index: number) => {
+    const now = new Date();
+    const resDate = new Date(reservation.reservation_date);
+    const startDateTime = parse(reservation.start_time, 'HH:mm:ss', resDate);
+    const endDateTime = parse(reservation.end_time, 'HH:mm:ss', resDate);
+    
+    // Check if reservation is currently ongoing
+    if (isAfter(now, startDateTime) && isBefore(now, endDateTime)) {
+      return { text: "Ongoing", className: "bg-green-500 text-white animate-pulse" };
+    }
+    
+    // First pending reservation (next in line)
+    if (index === 0) {
+      return { text: "Next in list", className: "bg-primary text-primary-foreground" };
+    }
+    
+    return null;
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-4">
       <h2 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
         Pending Reservations ({reservations.length})
       </h2>
       
-      {reservations.map((reservation, index) => (
-        <Card key={reservation.id} className="shadow-lg hover:shadow-xl transition-all animate-fade-in">
-          <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl flex items-center gap-2">
-                {reservation.name}
-                {index === 0 && (
-                  <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
-                    Next in list
-                  </span>
-                )}
-              </CardTitle>
+      {reservations.map((reservation, index) => {
+        const status = getReservationStatus(reservation, index);
+        
+        return (
+          <Card key={reservation.id} className="shadow-lg hover:shadow-xl transition-all animate-fade-in">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  {reservation.name}
+                  {status && (
+                    <span className={`text-xs px-2 py-1 rounded-full ${status.className}`}>
+                      {status.text}
+                    </span>
+                  )}
+                </CardTitle>
               <Button
                 variant="destructive"
                 size="sm"
@@ -160,7 +214,8 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
             )}
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 };
