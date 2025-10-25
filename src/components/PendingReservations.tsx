@@ -57,20 +57,38 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
       )
       .subscribe();
 
-    // Check every 30 seconds for completed reservations
-    const interval = setInterval(async () => {
-      const now = new Date();
-      
-      for (const reservation of reservations) {
-        // Use end_date if available, otherwise use reservation_date
-        const finalDate = reservation.end_date || reservation.reservation_date;
-        const endDate = new Date(finalDate);
-        const endDateTime = parse(reservation.end_time, 'HH:mm:ss', endDate);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refreshTrigger]);
+
+  // Separate effect for auto-completion check
+  useEffect(() => {
+    const checkCompletedReservations = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Fetch all pending reservations directly from database
+        const { data: pendingReservations, error } = await supabase
+          .from('reservations')
+          .select('*')
+          .eq('status', 'pending')
+          .eq('user_id', user.id);
+
+        if (error || !pendingReservations) return;
+
+        const now = new Date();
         
-        // If current time is past end time, mark as completed
-        if (isAfter(now, endDateTime)) {
-          try {
-            const { error } = await supabase
+        for (const reservation of pendingReservations) {
+          // Use end_date if available, otherwise use reservation_date
+          const finalDate = reservation.end_date || reservation.reservation_date;
+          const endDate = new Date(finalDate);
+          const endDateTime = parse(reservation.end_time, 'HH:mm:ss', endDate);
+          
+          // If current time is past end time, mark as completed
+          if (isAfter(now, endDateTime)) {
+            const { error: updateError } = await supabase
               .from('reservations')
               .update({ 
                 status: 'completed',
@@ -79,22 +97,27 @@ export const PendingReservations = ({ refreshTrigger }: PendingReservationsProps
               .eq('id', reservation.id)
               .eq('status', 'pending');
 
-            if (!error) {
+            if (!updateError) {
               toast.success(`Reservation for ${reservation.name} completed!`);
               playSound('success');
             }
-          } catch (error) {
-            console.error('Error completing reservation:', error);
           }
         }
+      } catch (error) {
+        console.error('Error checking completed reservations:', error);
       }
-    }, 30000); // Check every 30 seconds
+    };
+
+    // Check immediately on mount
+    checkCompletedReservations();
+
+    // Then check every 10 seconds
+    const interval = setInterval(checkCompletedReservations, 10000);
 
     return () => {
-      supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, [refreshTrigger, reservations]);
+  }, []);
 
   const handleCancel = async (id: string) => {
     playSound('click');
