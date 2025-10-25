@@ -56,14 +56,22 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
             <h3 className="text-lg font-bold text-primary mb-3 font-serif">Developed by</h3>
             <div className="space-y-1 text-sm">
               <p className="text-foreground"><span className="font-semibold">Name:</span> Jayasri R</p>
-              <p className="text-foreground"><span className="font-semibold">Reg No:</span> 24MIS0183 (SCORE)</p>
               <p className="text-foreground">
                 <span className="font-semibold">Email:</span>{" "}
                 <a 
-                  href="mailto:jayasri.r2024@vitstudent.ac.in" 
+                  href="mailto:shreee2212@gmail.com" 
                   className="text-primary hover:underline transition-all"
                 >
-                  jayasri.r2024@vitstudent.ac.in
+                  shreee2212@gmail.com
+                </a>
+              </p>
+              <p className="text-foreground">
+                <span className="font-semibold">Contact:</span>{" "}
+                <a 
+                  href="tel:8148836156" 
+                  className="text-primary hover:underline transition-all"
+                >
+                  8148836156
                 </a>
               </p>
             </div>
