@@ -49,7 +49,7 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
           Start Reservation
         </Button>
 
-        {/* Developer and Faculty Info */}
+        {/* Developer Info */}
         <div className="pt-8 space-y-4 max-w-2xl mx-auto">
           {/* Developer Box */}
           <div className="bg-card border-2 border-primary/20 rounded-lg p-6 shadow-lg">
@@ -64,23 +64,6 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
                   className="text-primary hover:underline transition-all"
                 >
                   jayasri.r2024@vitstudent.ac.in
-                </a>
-              </p>
-            </div>
-          </div>
-
-          {/* Faculty Box */}
-          <div className="bg-card border-2 border-secondary/20 rounded-lg p-6 shadow-lg">
-            <h3 className="text-lg font-bold text-secondary mb-3 font-serif">Faculty in-charge</h3>
-            <div className="space-y-1 text-sm">
-              <p className="text-foreground"><span className="font-semibold">Name:</span> Dr.KishoreRaja P C</p>
-              <p className="text-foreground">
-                <span className="font-semibold">Email:</span>{" "}
-                <a 
-                  href="mailto:kishoreraja.pc@vit.ac.in" 
-                  className="text-secondary hover:underline transition-all"
-                >
-                  kishoreraja.pc@vit.ac.in
                 </a>
               </p>
             </div>
